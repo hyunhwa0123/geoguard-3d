@@ -1,0 +1,36 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Java / Gradle
+.tools/
+.gradle/
+**/build/
+*.class
+
+# Node / Vite
+node_modules/
+**/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+*.local
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+.lavish/
+
+# Local benchmark scratch files (curated results may be committed as Markdown)
+infra/db/benchmark/results/*.txt
+!infra/db/benchmark/results/.gitkeep
+

@@ -1,0 +1,11 @@
+GeoGuard 3D low-poly drone asset dedication
+
+The GeoGuard drone geometry in raw/geoguard-drone.obj was authored specifically for this
+repository and does not incorporate third-party model data or textures.
+
+To the extent possible under law, the author dedicates the geometry and the generated
+processed/geoguard-drone.glb to the public domain under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The build script remains source code covered by the repository's overall software license.
+

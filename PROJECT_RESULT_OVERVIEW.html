@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="GeoGuard 3D 개발 결과를 5분 안에 이해하는 인터랙티브 기술 문서">
+  <title>GeoGuard 3D · 개발 결과 5분 투어</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071019;
+      --bg-deep: #040a0f;
+      --panel: #0c1a26;
+      --panel-2: #102532;
+      --panel-glass: rgba(12, 26, 38, .88);
+      --line: rgba(126, 171, 185, .18);
+      --line-strong: rgba(126, 171, 185, .34);
+      --text: #e8f2f5;
+      --soft: #b7c9cf;
+      --muted: #708995;
+      --cyan: #41e2d0;
+      --safe: #50e6a8;
+      --warning: #ffd166;
+      --danger: #ff506d;
+      --blue: #6ab8ff;
+      --shadow: 0 20px 70px rgba(0, 0, 0, .25);
+      --radius: 16px;
+      font-family: Inter, Pretendard, "Noto Sans KR", system-ui, sans-serif;
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #edf5f6;
+      --bg-deep: #dce9eb;
+      --panel: #ffffff;
+      --panel-2: #e8f2f3;
+      --panel-glass: rgba(255, 255, 255, .9);
+      --line: rgba(38, 88, 98, .15);
+      --line-strong: rgba(38, 88, 98, .3);
+      --text: #0b2229;
+      --soft: #385963;
+      --muted: #66808a;
+      --cyan: #087f78;
+      --safe: #087c52;
+      --warning: #a86700;
+      --danger: #c82848;
+      --blue: #1769aa;
+      --shadow: 0 18px 55px rgba(23, 61, 68, .13);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% -5%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 28rem),
+        radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--blue) 8%, transparent), transparent 30rem),
+        var(--bg);
+      line-height: 1.62;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--cyan); }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    svg, img { max-width: 100%; height: auto; }
+    p, h1, h2, h3, li, dd, td, th, code, .badge { overflow-wrap: anywhere; }
+    .scroll-progress {
+      position: fixed; inset: 0 auto auto 0; z-index: 100; width: 0; height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--safe)); box-shadow: 0 0 18px var(--cyan);
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 50; min-height: 64px;
+      display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      padding: 0 5vw; border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(16px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; text-decoration: none; color: var(--text); }
+    .brand-mark { width: 30px; height: 30px; position: relative; flex: 0 0 auto; transform: rotate(30deg); }
+    .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border: 1px solid var(--cyan); inset: 2px; }
+    .brand-mark::after { inset: 8px; background: color-mix(in srgb, var(--cyan) 28%, transparent); }
+    .brand-copy { display: grid; line-height: 1.1; }
+    .brand-copy small { color: var(--muted); font-size: 9px; letter-spacing: .18em; font-weight: 800; }
+    .brand-copy b { font-size: 17px; letter-spacing: -.03em; }
+    .brand-copy strong { color: var(--cyan); }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .read-time { color: var(--muted); font: 700 10px ui-monospace, monospace; letter-spacing: .08em; }
+    .icon-button {
+      width: 36px; height: 36px; border: 1px solid var(--line-strong); border-radius: 9px;
+      background: var(--panel-glass); cursor: pointer;
+    }
+    .icon-button:hover { color: var(--cyan); border-color: var(--cyan); }
+    .page { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+    .hero { min-height: 590px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 36px; align-items: center; padding: 86px 0 60px; }
+    .eyebrow { color: var(--cyan); font-size: 11px; font-weight: 900; letter-spacing: .19em; text-transform: uppercase; }
+    h1 { margin: 14px 0 18px; font-size: clamp(42px, 7vw, 82px); line-height: .98; letter-spacing: -.06em; }
+    h1 span { color: var(--cyan); }
+    .hero-lead { max-width: 720px; margin: 0; color: var(--soft); font-size: clamp(16px, 2vw, 20px); }
+    .hero-note { margin-top: 22px; padding-left: 14px; border-left: 2px solid var(--cyan); color: var(--muted); font-size: 13px; }
+    .hero-panel { padding: 24px; border: 1px solid var(--line); border-radius: 22px; background: var(--panel-glass); box-shadow: var(--shadow); }
+    .hero-panel h2 { margin: 0 0 16px; font-size: 15px; }
+    .pulse-row { display: flex; align-items: center; gap: 9px; color: var(--safe); font: 800 11px ui-monospace, monospace; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 14px var(--safe); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.7); } }
+    .mini-flow { margin-top: 20px; display: grid; gap: 10px; }
+    .mini-flow div { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 70%, transparent); }
+    .mini-flow i { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--cyan); color: var(--cyan); font-style: normal; font: 800 10px ui-monospace, monospace; }
+    .mini-flow b { font-size: 12px; }
+    .mini-flow small { color: var(--muted); font: 700 9px ui-monospace, monospace; }
+    .stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
+    .stat { min-width: 0; padding: 16px; border-top: 2px solid var(--line-strong); background: color-mix(in srgb, var(--panel) 74%, transparent); }
+    .stat strong { display: block; color: var(--cyan); font: 800 clamp(22px, 3vw, 32px) ui-monospace, monospace; }
+    .stat span { color: var(--muted); font-size: 11px; }
+    .quick-nav { position: sticky; top: 64px; z-index: 40; margin-bottom: 42px; padding: 10px; display: flex; gap: 6px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-glass); backdrop-filter: blur(14px); }
+    .quick-nav a { flex: 0 0 auto; padding: 8px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 800; }
+    .quick-nav a:hover, .quick-nav a.active { color: var(--text); background: var(--panel-2); }
+    section { scroll-margin-top: 130px; margin: 0 0 90px; }
+    .section-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); align-items: end; gap: 24px; margin-bottom: 28px; }
+    .section-index { color: var(--cyan); font: 800 11px ui-monospace, monospace; letter-spacing: .14em; }
+    .section-head h2 { margin: 5px 0 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; letter-spacing: -.045em; }
+    .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .card { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-glass); box-shadow: var(--shadow); }
+    .card-body { padding: 22px; }
+    .card h3 { margin: 0 0 8px; font-size: 16px; }
+    .card p { color: var(--soft); font-size: 13px; }
+    .architecture { padding: 18px; overflow: hidden; }
+    .architecture svg { display: block; width: 100%; color: var(--text); }
+    .arch-node { cursor: pointer; }
+    .arch-node .node-box { fill: var(--panel-2); stroke: var(--line-strong); stroke-width: 1.5; transition: .2s ease; }
+    .arch-node:hover .node-box, .arch-node.active .node-box { stroke: var(--cyan); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--cyan) 45%, transparent)); }
+    .arch-node .node-kicker { fill: var(--muted); font: 700 10px ui-monospace, monospace; letter-spacing: 1px; }
+    .arch-node .node-title { fill: var(--text); font: 800 17px system-ui, sans-serif; }
+    .arch-node .node-copy { fill: var(--soft); font: 500 11px system-ui, sans-serif; }
+    .arch-edge { fill: none; stroke: var(--cyan); stroke-width: 2.2; marker-end: url(#arrow); }
+    .arch-edge.query { stroke: var(--warning); marker-end: url(#arrow-warn); stroke-dasharray: 6 6; }
+    .edge-label { fill: var(--muted); font: 700 9px ui-monospace, monospace; letter-spacing: .4px; }
+    .arch-detail { margin-top: 14px; min-height: 128px; display: grid; grid-template-columns: 160px minmax(0, 1fr) minmax(220px, .65fr); gap: 16px; align-items: start; padding: 18px; border: 1px solid var(--line); background: var(--bg-deep); }
+    .arch-detail .label { color: var(--cyan); font: 800 10px ui-monospace, monospace; letter-spacing: .12em; }
+    .arch-detail h3 { margin: 4px 0 0; font-size: 19px; }
+    .arch-detail p { margin: 0; color: var(--soft); font-size: 13px; }
+    .evidence { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 600 10px/1.7 ui-monospace, monospace; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: var(--muted); font-size: 10px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 22px; height: 2px; background: var(--cyan); }
+    .legend .query-key i { background: repeating-linear-gradient(90deg, var(--warning) 0 6px, transparent 6px 10px); }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .filter {
+      padding: 7px 11px; border: 1px solid var(--line-strong); border-radius: 999px;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 800;
+    }
+    .filter:hover, .filter.active { color: var(--bg-deep); border-color: var(--cyan); background: var(--cyan); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-glass); }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); background: var(--panel-2); font: 800 10px ui-monospace, monospace; letter-spacing: .08em; }
+    td { color: var(--soft); font-size: 12px; }
+    td:first-child { color: var(--cyan); font-weight: 800; }
+    td code, .path { color: var(--muted); font: 600 10px/1.6 ui-monospace, monospace; }
+    tr:last-child td { border-bottom: 0; }
+    tr[hidden] { display: none; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text); font: 700 9px ui-monospace, monospace; white-space: nowrap; }
+    .badge.live { color: var(--safe); border-color: color-mix(in srgb, var(--safe) 55%, transparent); }
+    .tabs { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 14px; }
+    .tab { flex: 0 0 auto; padding: 9px 13px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 800; }
+    .tab.active { border-color: var(--cyan); color: var(--cyan); }
+    .flow-panel { display: none; }
+    .flow-panel.active { display: block; }
+    .flow-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; counter-reset: step; }
+    .flow-step { position: relative; min-width: 0; padding: 16px 13px; border: 1px solid var(--line); background: var(--panel-glass); }
+    .flow-step::after { content: "→"; position: absolute; right: -10px; top: 50%; z-index: 2; color: var(--cyan); font-weight: 900; }
+    .flow-step:last-child::after { display: none; }
+    .flow-step span { display: block; margin-bottom: 9px; color: var(--cyan); font: 800 10px ui-monospace, monospace; }
+    .flow-step b { display: block; margin-bottom: 5px; font-size: 12px; }
+    .flow-step p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .payload { margin-top: 12px; display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 12px; }
+    .code-card { margin: 0; padding: 18px; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-deep); color: var(--soft); font: 600 11px/1.7 ui-monospace, monospace; }
+    .code-card .key { color: var(--cyan); }.code-card .value { color: var(--warning); }
+    .callout { padding: 18px; border-left: 3px solid var(--cyan); background: color-mix(in srgb, var(--panel-2) 75%, transparent); }
+    .callout b { display: block; margin-bottom: 5px; font-size: 13px; }
+    .callout p { margin: 0; color: var(--soft); font-size: 12px; }
+    .data-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 14px; }
+    .schema { padding: 20px; }
+    .schema-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+    .table-card { min-width: 0; border: 1px solid var(--line); background: var(--bg-deep); }
+    .table-card header { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--cyan); font: 800 11px ui-monospace, monospace; }
+    .table-card ul { list-style: none; margin: 0; padding: 8px 12px 12px; }
+    .table-card li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; color: var(--soft); font-size: 10px; }
+    .table-card li small { color: var(--muted); font: 600 9px ui-monospace, monospace; }
+    .relation { margin: 12px 0 0; text-align: center; color: var(--muted); font: 700 10px ui-monospace, monospace; }
+    .risk-lab { padding: 20px; }
+    .risk-output { display: grid; place-items: center; min-height: 116px; margin: 14px 0; border: 1px solid var(--line); background: radial-gradient(circle, color-mix(in srgb, var(--status-color) 17%, transparent), transparent 68%); }
+    .risk-output strong { color: var(--status-color); font: 900 28px ui-monospace, monospace; text-shadow: 0 0 18px color-mix(in srgb, var(--status-color) 55%, transparent); }
+    .risk-output small { display: block; color: var(--muted); text-align: center; }
+    .control { margin-top: 12px; }
+    .control label { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; color: var(--soft); font-size: 11px; }
+    input[type="range"] { width: 100%; accent-color: var(--cyan); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 10px; border: 1px solid var(--line); color: var(--soft); font-size: 11px; }
+    .toggle-row input { accent-color: var(--cyan); }
+    .compute-explainer { margin-top: 14px; padding: 22px; }
+    .compute-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); gap: 22px; align-items: end; margin-bottom: 18px; }
+    .compute-head h3 { margin: 5px 0 0; font-size: clamp(20px, 3vw, 28px); letter-spacing: -.03em; }
+    .compute-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .risk-diagram-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-deep); }
+    .risk-diagram { display: block; width: 100%; min-width: 820px; color: var(--text); }
+    .risk-diagram .decision-box { fill: var(--panel-2); stroke: var(--line-strong); stroke-width: 1.5; }
+    .risk-diagram .decision-diamond { fill: var(--panel-2); stroke: var(--cyan); stroke-width: 1.8; }
+    .risk-diagram .output-safe { fill: color-mix(in srgb, var(--safe) 12%, var(--panel)); stroke: var(--safe); stroke-width: 1.8; }
+    .risk-diagram .output-warning { fill: color-mix(in srgb, var(--warning) 12%, var(--panel)); stroke: var(--warning); stroke-width: 1.8; }
+    .risk-diagram .output-danger { fill: color-mix(in srgb, var(--danger) 12%, var(--panel)); stroke: var(--danger); stroke-width: 1.8; }
+    .risk-diagram .diagram-line { fill: none; stroke: var(--cyan); stroke-width: 2; marker-end: url(#risk-arrow); }
+    .risk-diagram .diagram-line.no { stroke: var(--muted); marker-end: url(#risk-arrow-muted); }
+    .risk-diagram .title { fill: var(--text); font: 800 13px system-ui, sans-serif; }
+    .risk-diagram .copy { fill: var(--muted); font: 600 10px ui-monospace, monospace; }
+    .risk-diagram .edge-copy { fill: var(--muted); font: 800 9px ui-monospace, monospace; }
+    .risk-diagram .safe-text { fill: var(--safe); }.risk-diagram .warning-text { fill: var(--warning); }.risk-diagram .danger-text { fill: var(--danger); }
+    .compute-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .compute-note { min-width: 0; padding: 15px; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 72%, transparent); }
+    .compute-note span { display: block; margin-bottom: 7px; color: var(--cyan); font: 800 9px ui-monospace, monospace; letter-spacing: .1em; }
+    .compute-note b { display: block; margin-bottom: 6px; font-size: 12px; }
+    .compute-note p { margin: 0; color: var(--muted); font-size: 10px; }
+    .compute-note code { color: var(--soft); font: 600 10px ui-monospace, monospace; }
+    .authority-note { margin-top: 12px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 11px; align-items: start; padding: 14px; border-left: 3px solid var(--warning); background: color-mix(in srgb, var(--warning) 7%, var(--panel)); }
+    .authority-note i { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--warning); color: var(--warning); font-style: normal; font: 900 11px ui-monospace, monospace; }
+    .authority-note p { margin: 0; color: var(--soft); font-size: 11px; }
+    .proof-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .proof-card { padding: 20px; }
+    .proof-card .number { display: block; color: var(--cyan); font: 900 30px ui-monospace, monospace; }
+    .proof-card p { margin-bottom: 0; color: var(--muted); font-size: 11px; }
+    .benchmark { grid-column: 1 / -1; padding: 22px; }
+    .bar-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 72px; gap: 12px; align-items: center; margin-top: 12px; color: var(--soft); font-size: 11px; }
+    .bar-track { height: 13px; overflow: hidden; border-radius: 999px; background: var(--panel-2); }
+    .bar { height: 100%; border-radius: inherit; background: var(--danger); }
+    .bar.after { background: var(--safe); }
+    .bar-row strong { text-align: right; font: 800 11px ui-monospace, monospace; }
+    .distribution { display: flex; height: 9px; overflow: hidden; margin-top: 18px; border-radius: 999px; background: var(--panel-2); }
+    .distribution span:nth-child(1) { width: 70.906%; background: var(--safe); }
+    .distribution span:nth-child(2) { width: 20.416%; background: var(--warning); }
+    .distribution span:nth-child(3) { width: 8.678%; background: var(--danger); }
+    .dist-labels { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 7px; color: var(--muted); font: 700 9px ui-monospace, monospace; }
+    .plan-explainer { margin-top: 18px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .plan-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .72fr); gap: 20px; align-items: end; margin-bottom: 14px; }
+    .plan-head h4 { margin: 5px 0 0; font-size: clamp(18px, 2.5vw, 25px); letter-spacing: -.03em; }
+    .plan-head p { margin: 0; color: var(--muted); font-size: 11px; }
+    .plan-diagram-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-deep); }
+    .plan-diagram { display: block; width: 100%; min-width: 900px; color: var(--text); }
+    .plan-diagram .lane-before { fill: color-mix(in srgb, var(--danger) 5%, var(--panel)); stroke: color-mix(in srgb, var(--danger) 32%, var(--line)); }
+    .plan-diagram .lane-after { fill: color-mix(in srgb, var(--safe) 5%, var(--panel)); stroke: color-mix(in srgb, var(--safe) 32%, var(--line)); }
+    .plan-diagram .plan-node { fill: var(--panel-2); stroke: var(--line-strong); stroke-width: 1.5; }
+    .plan-diagram .plan-node.index { stroke: var(--cyan); }
+    .plan-diagram .plan-node.merge { stroke: var(--safe); stroke-width: 2; }
+    .plan-diagram .plan-edge { fill: none; stroke: var(--danger); stroke-width: 2; marker-end: url(#plan-arrow-before); }
+    .plan-diagram .plan-edge.after { stroke: var(--safe); marker-end: url(#plan-arrow-after); }
+    .plan-diagram .lane-title { fill: var(--text); font: 800 14px system-ui, sans-serif; }
+    .plan-diagram .title { fill: var(--text); font: 800 12px system-ui, sans-serif; }
+    .plan-diagram .copy { fill: var(--muted); font: 600 9px ui-monospace, monospace; }
+    .plan-diagram .before-text { fill: var(--danger); }.plan-diagram .after-text { fill: var(--safe); }
+    .plan-compare-wrap { margin-top: 12px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+    .plan-compare { min-width: 800px; }
+    .plan-compare th:first-child { width: 19%; }
+    .plan-compare td:first-child { color: var(--text); }
+    .plan-reasons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
+    .plan-reason { min-width: 0; padding: 14px; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel-2) 72%, transparent); }
+    .plan-reason span { display: block; color: var(--cyan); font: 800 9px ui-monospace, monospace; letter-spacing: .08em; }
+    .plan-reason b { display: block; margin: 5px 0; font-size: 12px; }
+    .plan-reason p { margin: 0; color: var(--muted); font-size: 10px; }
+    .plan-note { margin-top: 12px; padding: 14px; border-left: 3px solid var(--warning); background: color-mix(in srgb, var(--warning) 7%, var(--panel)); color: var(--soft); font-size: 11px; }
+    .plan-note p { margin: 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    details { border: 1px solid var(--line); background: var(--panel-glass); }
+    summary { padding: 13px 15px; cursor: pointer; color: var(--text); font-size: 12px; font-weight: 800; }
+    details p { margin: 0; padding: 0 15px 15px; color: var(--muted); font-size: 11px; }
+    .glossary { display: grid; gap: 8px; }
+    .limits { padding: 22px; }
+    .limits ul { margin: 12px 0 0; padding-left: 18px; color: var(--soft); font-size: 12px; }
+    .limits li + li { margin-top: 8px; }
+    .file-map { margin-top: 14px; }
+    .file-map code { display: block; padding: 12px 14px; border-bottom: 1px solid var(--line); color: var(--muted); background: var(--bg-deep); font: 600 10px/1.6 ui-monospace, monospace; }
+    .file-map code:last-child { border-bottom: 0; }
+    footer { margin-top: 40px; padding: 26px 5vw; border-top: 1px solid var(--line); color: var(--muted); background: var(--bg-deep); text-align: center; font-size: 11px; }
+    .to-top { position: fixed; right: 18px; bottom: 18px; z-index: 30; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
+    .to-top.visible { opacity: 1; pointer-events: auto; transform: none; }
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-panel { max-width: none; }
+      .flow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .flow-step:nth-child(3)::after { display: none; }
+      .data-grid, .payload, .compute-head { grid-template-columns: 1fr; }
+      .compute-notes { grid-template-columns: 1fr 1fr; }
+      .plan-head { grid-template-columns: 1fr; }
+      .plan-reasons { grid-template-columns: 1fr 1fr; }
+      .proof-grid { grid-template-columns: 1fr 1fr; }
+      .arch-detail { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .topbar { padding: 0 16px; }.read-time { display: none; }
+      .page { width: min(100% - 22px, 1160px); }
+      .hero { padding-top: 56px; gap: 24px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .section-head { grid-template-columns: 1fr; }
+      .flow-steps { grid-template-columns: 1fr 1fr; }
+      .flow-step:nth-child(3)::after { display: block; }
+      .flow-step:nth-child(even)::after { display: none; }
+      .schema-grid, .proof-grid, .two-col { grid-template-columns: 1fr; }
+      .compute-notes { grid-template-columns: 1fr; }
+      .plan-reasons { grid-template-columns: 1fr; }
+      .benchmark { grid-column: auto; }
+      .bar-row { grid-template-columns: 92px minmax(0, 1fr) 62px; }
+      .architecture { overflow-x: auto; }
+      .architecture svg { min-width: 760px; }
+    }
+  </style>
+  <script type="application/json" data-lavish-revisions>
+    [{ "id": "r1", "label": "위험구역 연산 설명", "timestamp": "2026-10-02T15:58:32+09:00", "summary": "PostGIS의 고도·거리·다각형 내부 판정 순서와 서버 권한을 추가" },
+     { "id": "r2", "label": "인덱스 실행계획 해설", "timestamp": "2026-10-02T16:22:09+09:00", "summary": "Parallel Seq Scan과 BitmapAnd의 차이, 인덱스 결합 원리, 성능 개선 이유를 추가" }]
+  </script>
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="GeoGuard 3D 문서 처음으로">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-copy"><small>DEVELOPMENT RESULT</small><b>GeoGuard <strong>3D</strong></b></span>
+    </a>
+    <div class="top-actions">
+      <span class="read-time">약 5분 · 구현 기준 2026-10-02</span>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="밝은 테마로 전환" title="테마 전환">☼</button>
+    </div>
+  </header>
+
+  <main id="top" class="page">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <div class="eyebrow">5-minute system tour</div>
+        <h1 id="hero-title">드론 위치가<br><span>공간 판단</span>이 되기까지</h1>
+        <p class="hero-lead">GeoGuard 3D는 합성 드론 위치를 백엔드로 수집하고, PostGIS에서 위험구역·고도를 판정한 뒤 CesiumJS 3D 지도에 실시간으로 전달하는 Web GIS 포트폴리오입니다.</p>
+        <p class="hero-note"><b>한 문장으로:</b> “위치를 받는다 → 공간적으로 판단한다 → 저장한다 → 즉시 보여준다 → 나중에 다시 찾는다”를 한 프로젝트에 연결했습니다.</p>
+      </div>
+      <aside class="hero-panel" aria-label="현재 구현 핵심">
+        <div class="pulse-row"><i class="pulse"></i> END-TO-END FLOW VERIFIED</div>
+        <h2>읽는 동안 기억할 네 단계</h2>
+        <div class="mini-flow">
+          <div><i>01</i><b>위치 생성</b><small>Node.js</small></div>
+          <div><i>02</i><b>공간 판정·저장</b><small>Spring + PostGIS</small></div>
+          <div><i>03</i><b>실시간 전파</b><small>WebSocket</small></div>
+          <div><i>04</i><b>3D 관제·검색</b><small>CesiumJS</small></div>
+        </div>
+      </aside>
+      <div class="stats" aria-label="프로젝트 핵심 수치">
+        <div class="stat"><strong>1초</strong><span>실시간 위치 전송 간격</span></div>
+        <div class="stat"><strong>3개</strong><span>합성 위험구역 순환</span></div>
+        <div class="stat"><strong>100K</strong><span>PostGIS 성능 측정 데이터</span></div>
+        <div class="stat"><strong>6.46×</strong><span>인덱스 적용 후 속도 비율</span></div>
+      </div>
+    </section>
+
+    <nav class="quick-nav" aria-label="문서 섹션">
+      <a href="#architecture">구성도</a>
+      <a href="#stack">기술 배치</a>
+      <a href="#flow">데이터 생성·관리</a>
+      <a href="#storage">저장·판정</a>
+      <a href="#proof">검증 결과</a>
+      <a href="#guide">용어·한계</a>
+    </nav>
+
+    <section id="architecture" aria-labelledby="architecture-title">
+      <header class="section-head">
+        <div><span class="section-index">01 / ARCHITECTURE</span><h2 id="architecture-title">프로젝트 구성도</h2></div>
+        <p>박스를 눌러 각 구성요소의 책임과 실제 구현 파일을 확인하세요. 청록색은 실시간 쓰기 흐름, 노란 점선은 조회 흐름입니다.</p>
+      </header>
+      <div class="card architecture">
+        <svg viewBox="0 0 1120 430" role="img" aria-labelledby="arch-svg-title arch-svg-desc">
+          <title id="arch-svg-title">GeoGuard 3D 전체 구성도</title>
+          <desc id="arch-svg-desc">시뮬레이터가 Spring Boot로 위치를 보내고 PostGIS에서 판정 및 저장한 뒤 WebSocket으로 CesiumJS에 전달한다. 브라우저는 과거 경로를 REST로 다시 조회한다.</desc>
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--cyan)" /></marker>
+            <marker id="arrow-warn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--warning)" /></marker>
+          </defs>
+          <path id="edge-sim-api" class="arch-edge" d="M235 190 C270 190 275 160 310 160"><title>1초마다 REST 텔레메트리 전송</title></path>
+          <path id="edge-api-db" class="arch-edge" d="M560 160 C590 160 600 160 630 160"><title>공간 판정과 트랜잭션 저장</title></path>
+          <path id="edge-api-web" class="arch-edge" d="M560 235 C690 235 790 160 900 160"><title>커밋 이후 WebSocket 전파</title></path>
+          <path id="edge-web-query" class="arch-edge query" d="M900 280 C760 370 460 370 390 285"><title>BBOX와 시간 범위로 과거 경로 조회</title></path>
+          <text x="256" y="175" class="edge-label">POST /telemetry/batch</text>
+          <text x="575" y="146" class="edge-label">JDBC / SQL</text>
+          <text x="690" y="217" class="edge-label">WS /ws/telemetry</text>
+          <text x="585" y="361" class="edge-label">REST · BBOX · TIME</text>
+
+          <g id="node-simulator" class="arch-node active" data-module="simulator" role="button" tabindex="0" aria-label="시뮬레이터 상세 보기">
+            <title>Node.js 드론 데이터 생성기</title>
+            <rect class="node-box" x="25" y="115" width="210" height="150" rx="14" />
+            <text class="node-kicker" x="48" y="145">DATA SOURCE</text>
+            <text class="node-title" x="48" y="177">Node Simulator</text>
+            <text class="node-copy" x="48" y="205">위험구역 조회 · 경유점 생성</text>
+            <text class="node-copy" x="48" y="224">위치·고도·방향·속도 계산</text>
+            <text class="node-copy" x="48" y="243">1초마다 JSON 전송</text>
+          </g>
+          <g id="node-backend" class="arch-node" data-module="backend" role="button" tabindex="0" aria-label="백엔드 상세 보기">
+            <title>Spring Boot 수집, 검증, 공간 판정 서비스</title>
+            <rect class="node-box" x="310" y="80" width="250" height="225" rx="14" />
+            <text class="node-kicker" x="335" y="112">APPLICATION SERVICE</text>
+            <text class="node-title" x="335" y="144">Spring Boot 3</text>
+            <text class="node-copy" x="335" y="174">REST 수집 · Bean Validation</text>
+            <text class="node-copy" x="335" y="194">공간위험 판정 · 트랜잭션</text>
+            <text class="node-copy" x="335" y="214">검색 API · OpenAPI</text>
+            <line x1="335" y1="234" x2="535" y2="234" stroke="var(--line-strong)" />
+            <text class="node-copy" x="335" y="259">AFTER_COMMIT 이벤트</text>
+            <text class="node-copy" x="335" y="279">→ WebSocket broadcast</text>
+          </g>
+          <g id="node-database" class="arch-node" data-module="database" role="button" tabindex="0" aria-label="데이터베이스 상세 보기">
+            <title>PostgreSQL과 PostGIS 공간 데이터 저장소</title>
+            <rect class="node-box" x="630" y="95" width="220" height="190" rx="14" />
+            <text class="node-kicker" x="653" y="127">SPATIAL DATABASE</text>
+            <text class="node-title" x="653" y="159">PostgreSQL + PostGIS</text>
+            <text class="node-copy" x="653" y="188">PointZ · Polygon · EPSG:4326</text>
+            <text class="node-copy" x="653" y="208">GiST + B-tree 인덱스</text>
+            <text class="node-copy" x="653" y="228">telemetry / zone / event</text>
+            <text class="node-copy" x="653" y="248">ST_Covers · ST_DWithin</text>
+          </g>
+          <g id="node-frontend" class="arch-node" data-module="frontend" role="button" tabindex="0" aria-label="프런트엔드 상세 보기">
+            <title>CesiumJS 3D 실시간 관제 화면</title>
+            <rect class="node-box" x="900" y="85" width="195" height="210" rx="14" />
+            <text class="node-kicker" x="922" y="117">3D WEB CLIENT</text>
+            <text class="node-title" x="922" y="149">CesiumJS + TS</text>
+            <text class="node-copy" x="922" y="178">GLB 드론 모델 배치</text>
+            <text class="node-copy" x="922" y="198">실시간 궤적·위험상태</text>
+            <text class="node-copy" x="922" y="218">GeoJSON 3D 구역</text>
+            <text class="node-copy" x="922" y="238">과거 경로 검색</text>
+            <text class="node-copy" x="922" y="258">오프라인 데모 fallback</text>
+          </g>
+        </svg>
+        <div class="legend"><span><i></i> 실시간 수집·전파</span><span class="query-key"><i></i> 저장 데이터 조회</span></div>
+        <div class="arch-detail" id="arch-detail" aria-live="polite">
+          <div><span class="label">SELECTED MODULE</span><h3 id="arch-name">Node Simulator</h3></div>
+          <p id="arch-copy">백엔드의 위험구역 GeoJSON을 읽고 구역당 4개 경유점을 만든 뒤, 구간별 위도·경도·고도·방향·속도를 보간해 1초마다 전송합니다.</p>
+          <ul class="evidence" id="arch-files"><li>scripts/simulate-drone.mjs</li><li>scripts/lib/patrol-route.mjs</li><li>compose.yaml → simulator</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack" aria-labelledby="stack-title">
+      <header class="section-head">
+        <div><span class="section-index">02 / TECHNOLOGY MAP</span><h2 id="stack-title">어디에 어떤 기술이 쓰였나</h2></div>
+        <p>기술 이름보다 “왜 그 위치에 필요한가”를 중심으로 정리했습니다. 필터를 누르면 계층별로 좁혀볼 수 있습니다.</p>
+      </header>
+      <div class="filter-bar" role="group" aria-label="기술 계층 필터">
+        <button class="filter active" type="button" data-filter="all">전체</button>
+        <button class="filter" type="button" data-filter="frontend">Frontend</button>
+        <button class="filter" type="button" data-filter="backend">Backend</button>
+        <button class="filter" type="button" data-filter="data">Data</button>
+        <button class="filter" type="button" data-filter="realtime">Realtime</button>
+        <button class="filter" type="button" data-filter="3d">3D</button>
+        <button class="filter" type="button" data-filter="infra">Infra</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>계층</th><th>기술</th><th>맡은 역할</th><th>대표 구현 위치</th></tr></thead>
+          <tbody>
+            <tr data-layer="frontend"><td>Frontend</td><td>TypeScript · Vite</td><td>타입이 있는 브라우저 애플리케이션과 빌드</td><td><code>frontend/src/main.ts<br>frontend/src/api.ts</code></td></tr>
+            <tr data-layer="frontend 3d"><td>3D GIS</td><td>CesiumJS</td><td>지구 좌표, 3D 제한구역, 드론 모델, 실시간/과거 궤적 렌더링</td><td><code>frontend/src/main.ts</code></td></tr>
+            <tr data-layer="backend"><td>Backend</td><td>Java 21 · Spring Boot 3</td><td>REST 수집·검색, 입력 검증, 트랜잭션, 예외 응답</td><td><code>backend/.../api<br>backend/.../service</code></td></tr>
+            <tr data-layer="backend data"><td>Data Access</td><td>Spring JDBC · Flyway</td><td>명시적인 공간 SQL 실행과 스키마 버전 관리</td><td><code>repository/*.java<br>db/migration/*.sql</code></td></tr>
+            <tr data-layer="data"><td>Spatial DB</td><td>PostgreSQL · PostGIS</td><td>PointZ/Polygon 저장, 거리·포함 판정, 시공간 검색</td><td><code>infra/db/init/002_schema.sql</code></td></tr>
+            <tr data-layer="realtime backend"><td>Realtime</td><td>Raw WebSocket</td><td>DB 커밋이 끝난 위치만 브라우저 세션에 즉시 전파</td><td><code>TelemetryWebSocketHandler.java</code></td></tr>
+            <tr data-layer="3d"><td>3D Asset</td><td>OBJ → glTF 2.0/GLB</td><td>삼각분할·법선 계산 후 외부 의존성 없이 드론 모델 생성</td><td><code>assets/build-drone-model.mjs</code></td></tr>
+            <tr data-layer="infra"><td>Infra</td><td>Docker Compose · Nginx</td><td>DB·백엔드·프런트·시뮬레이터 실행 및 API/WS 프록시</td><td><code>compose.yaml<br>frontend/nginx.conf</code></td></tr>
+            <tr data-layer="backend"><td>API Contract</td><td>OpenAPI / Swagger UI</td><td>수집·조회 API를 브라우저에서 확인하고 호출</td><td><code>/swagger-ui.html</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="flow" aria-labelledby="flow-title">
+      <header class="section-head">
+        <div><span class="section-index">03 / DATA LIFECYCLE</span><h2 id="flow-title">데이터는 어떻게 만들고 관리하나</h2></div>
+        <p>실시간, 과거 예시, 성능 시험은 목적이 다른 세 개의 데이터 경로입니다. 탭을 바꾸어 차이를 확인하세요.</p>
+      </header>
+      <div class="tabs" role="tablist" aria-label="데이터 경로 선택">
+        <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="live">실시간 순환 데이터</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="history">과거 검색 예시</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="bulk">10만 건 성능 데이터</button>
+      </div>
+
+      <div class="flow-panel active" data-panel="live">
+        <div class="flow-steps">
+          <article class="flow-step"><span>01</span><b>구역 조회</b><p><code>GET /api/zones</code>로 현재 GeoJSON을 읽습니다.</p></article>
+          <article class="flow-step"><span>02</span><b>순환 경로 생성</b><p>구역마다 서·북·동·남 4개 내부 경유점을 만듭니다.</p></article>
+          <article class="flow-step"><span>03</span><b>1초 위치 생성</b><p>45m/s 이하로 좌표·고도·방향·속도를 보간합니다.</p></article>
+          <article class="flow-step"><span>04</span><b>판정·저장</b><p>REST 수신 후 PostGIS 공간 SQL과 트랜잭션을 실행합니다.</p></article>
+          <article class="flow-step"><span>05</span><b>커밋 후 전파</b><p>저장 성공 데이터만 WebSocket으로 내보냅니다.</p></article>
+          <article class="flow-step"><span>06</span><b>3D 이동</b><p>Cesium 엔티티와 청록색 실시간 궤적을 갱신합니다.</p></article>
+        </div>
+        <div class="payload">
+          <pre class="code-card" aria-label="텔레메트리 예시"><span class="key">{</span>
+  <span class="key">"droneId"</span>: <span class="value">"DRONE-LIVE-001"</span>,
+  <span class="key">"recordedAt"</span>: <span class="value">"2026-10-02T05:49:54Z"</span>,
+  <span class="key">"longitude"</span>: <span class="value">126.988760</span>,
+  <span class="key">"latitude"</span>: <span class="value">37.551000</span>,
+  <span class="key">"altitude"</span>: <span class="value">237.5</span>,
+  <span class="key">"heading"</span>: <span class="value">227</span>,
+  <span class="key">"speed"</span>: <span class="value">44.8</span>
+<span class="key">}</span></pre>
+          <div class="callout"><b>브라우저가 데이터를 만드는 것이 아닙니다</b><p>WebSocket이 연결된 동안 프런트엔드는 백엔드가 보낸 <code>DRONE-LIVE-001</code>만 사용합니다. 연결이 끊긴 경우에만 별도의 <code>DRONE-01</code> 오프라인 데모가 화면 확인용으로 동작합니다.</p></div>
+        </div>
+      </div>
+
+      <div class="flow-panel" data-panel="history">
+        <div class="flow-steps">
+          <article class="flow-step"><span>01</span><b>181개 생성</b><p>최근 30분의 합성 경로를 메모리에서 만듭니다.</p></article>
+          <article class="flow-step"><span>02</span><b>일괄 수집</b><p><code>DEMO-HISTORY-01</code>을 batch API로 저장합니다.</p></article>
+          <article class="flow-step"><span>03</span><b>서버 판정</b><p>각 점에 SAFE/WARNING/DANGER가 기록됩니다.</p></article>
+          <article class="flow-step"><span>04</span><b>조건 입력</b><p>드론 ID, 시작·종료 시각, 선택 BBOX를 지정합니다.</p></article>
+          <article class="flow-step"><span>05</span><b>시간순 조회</b><p>저장된 PointZ를 시간 오름차순으로 가져옵니다.</p></article>
+          <article class="flow-step"><span>06</span><b>노란 경로</b><p>Cesium polyline으로 과거 경로와 상태 수를 표시합니다.</p></article>
+        </div>
+        <div class="callout" style="margin-top:12px"><b>관리 기준</b><p>실시간 이동선은 브라우저 메모리에 최근 900개 점만 유지합니다. 반면 과거 경로는 PostGIS에 영속 저장되므로 새로고침 후에도 다시 조회할 수 있습니다.</p></div>
+      </div>
+
+      <div class="flow-panel" data-panel="bulk">
+        <div class="flow-steps">
+          <article class="flow-step"><span>01</span><b>SQL 생성기</b><p>20대 드론의 합성 위치를 대량 생성합니다.</p></article>
+          <article class="flow-step"><span>02</span><b>100,000건</b><p>SAFE 70,906 · WARNING 20,416 · DANGER 8,678.</p></article>
+          <article class="flow-step"><span>03</span><b>인덱스 제거</b><p>동일 BBOX·시간 조건의 실행 계획을 측정합니다.</p></article>
+          <article class="flow-step"><span>04</span><b>인덱스 복구</b><p>GiST와 시간 B-tree를 다시 적용합니다.</p></article>
+          <article class="flow-step"><span>05</span><b>재측정</b><p><code>EXPLAIN ANALYZE</code>로 실제 실행 시간을 비교합니다.</p></article>
+          <article class="flow-step"><span>06</span><b>결과 보존</b><p>측정 환경·실행계획·한계를 Markdown에 기록합니다.</p></article>
+        </div>
+        <div class="callout" style="margin-top:12px"><b>실시간 데모와 분리한 이유</b><p>대량 데이터는 화면 애니메이션용이 아니라 “공간+시간 검색이 인덱스를 타는가”를 검증하기 위한 시험 데이터입니다. 생성 목적을 분리해 데모 동작과 성능 측정을 서로 오염시키지 않습니다.</p></div>
+      </div>
+    </section>
+
+    <section id="storage" aria-labelledby="storage-title">
+      <header class="section-head">
+        <div><span class="section-index">04 / STORAGE & RULES</span><h2 id="storage-title">저장 구조와 위험 판정</h2></div>
+        <p>공간 형상과 비행 이력을 분리하고, 경고/위험일 때만 이벤트를 추가 저장합니다. 오른쪽 실험기로 판정 규칙을 바꿔보세요.</p>
+      </header>
+      <div class="data-grid">
+        <article class="card schema">
+          <h3>PostGIS 핵심 테이블 3개</h3>
+          <p>공간 형상은 EPSG:4326으로 통일합니다. 고도는 PointZ에도 넣고 범위 필터를 위해 숫자 컬럼으로도 보관합니다.</p>
+          <div class="schema-grid">
+            <div class="table-card"><header>restricted_zone</header><ul><li><span>boundary</span><small>Polygon</small></li><li><span>min/max_altitude</span><small>meter</small></li><li><span>name</span><small>varchar</small></li></ul></div>
+            <div class="table-card"><header>telemetry</header><ul><li><span>position</span><small>PointZ</small></li><li><span>recorded_at</span><small>timestamptz</small></li><li><span>status</span><small>enum-like</small></li><li><span>heading/speed</span><small>number</small></li></ul></div>
+            <div class="table-card"><header>risk_event</header><ul><li><span>telemetry_id</span><small>FK</small></li><li><span>zone_id</span><small>FK</small></li><li><span>distance_meters</span><small>number</small></li><li><span>status</span><small>warning/danger</small></li></ul></div>
+          </div>
+          <p class="relation">restricted_zone 1 ← risk_event → 1 telemetry · SAFE는 event 없음</p>
+          <div class="callout" style="margin-top:14px"><b>검색 인덱스</b><p><code>position GiST</code>는 BBOX 후보를 줄이고, <code>(drone_id, recorded_at)</code> B-tree는 특정 드론의 시간 경로를 빠르게 정렬·조회합니다.</p></div>
+        </article>
+
+        <aside class="card risk-lab">
+          <span class="eyebrow">INTERACTIVE RULE CHECK</span>
+          <h3>위험 판정 미니 실험기</h3>
+          <div class="risk-output" id="risk-output" style="--status-color: var(--danger)"><div><strong id="risk-status">DANGER</strong><small id="risk-reason">구역 내부 + 고도 범위 일치</small></div></div>
+          <div class="control"><label for="distance"><span>구역 경계까지 거리</span><b><span id="distance-value">0</span> m</b></label><input id="distance" type="range" min="0" max="400" step="10" value="0"></div>
+          <label class="toggle-row" for="altitude-match"><span>제한 고도 범위 안에 있음</span><input id="altitude-match" type="checkbox" checked></label>
+          <p style="margin-bottom:0">서버 규칙: 고도가 맞고 다각형 내부면 <b style="color:var(--danger)">DANGER</b>, 경계에서 200m 이내면 <b style="color:var(--warning)">WARNING</b>, 나머지는 <b style="color:var(--safe)">SAFE</b>.</p>
+        </aside>
+      </div>
+      <article class="card compute-explainer" data-lavish-revision="r1" aria-labelledby="compute-title">
+        <header class="compute-head">
+          <div><span class="eyebrow">HOW THE SPATIAL CHECK WORKS</span><h3 id="compute-title">드론이 위험구역 안에 있는지는 어떻게 계산할까?</h3></div>
+          <p>핵심은 <b>수평 위치(X·Y)</b>와 <b>고도(Z)</b>를 따로 확인하는 것입니다. 위험구역은 2D Polygon이고, 드론은 고도를 포함한 PointZ입니다.</p>
+        </header>
+        <div class="risk-diagram-wrap">
+          <svg class="risk-diagram" viewBox="0 0 1100 330" role="img" aria-labelledby="risk-svg-title risk-svg-desc">
+            <title id="risk-svg-title">PostGIS 위험구역 판정 의사결정 흐름</title>
+            <desc id="risk-svg-desc">경도, 위도, 고도로 PointZ를 만들고 고도 범위와 200미터 거리, 다각형 포함 여부를 차례로 확인하여 SAFE, WARNING, DANGER를 결정한다.</desc>
+            <defs>
+              <marker id="risk-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--cyan)" /></marker>
+              <marker id="risk-arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)" /></marker>
+            </defs>
+
+            <path id="risk-edge-point-altitude" class="diagram-line" d="M215 125 H280"><title>PointZ를 고도 판정으로 전달</title></path>
+            <path id="risk-edge-altitude-distance" class="diagram-line" d="M440 125 H500"><title>고도 범위가 일치하면 거리 후보 검색</title></path>
+            <path id="risk-edge-altitude-safe" class="diagram-line no" d="M360 190 V260 H865"><title>고도 범위 밖이면 안전</title></path>
+            <path id="risk-edge-distance-covers" class="diagram-line" d="M675 125 H735"><title>200미터 안의 구역을 내부 판정으로 전달</title></path>
+            <path id="risk-edge-distance-safe" class="diagram-line no" d="M590 190 V260 H865"><title>200미터 이내 구역이 없으면 안전</title></path>
+            <path id="risk-edge-covers-danger" class="diagram-line" d="M895 105 H940 V65 H970"><title>다각형이 점을 덮으면 위험</title></path>
+            <path id="risk-edge-covers-warning" class="diagram-line no" d="M895 145 H940 V165 H970"><title>가깝지만 내부가 아니면 경고</title></path>
+
+            <g id="risk-node-point"><title>EPSG 4326 PointZ 생성</title><rect class="decision-box" x="25" y="75" width="190" height="100" rx="12" /><text class="copy" x="47" y="103">STEP 1 · INPUT</text><text class="title" x="47" y="128">3D 점 만들기</text><text class="copy" x="47" y="151">lon · lat · altitude</text></g>
+            <g id="risk-node-altitude"><title>드론 고도가 제한구역의 최소 최대 고도 사이인지 확인</title><path class="decision-diamond" d="M360 55 L440 125 L360 195 L280 125 Z" /><text class="title" x="319" y="120">고도 범위</text><text class="copy" x="328" y="140">일치?</text></g>
+            <g id="risk-node-distance"><title>geography 변환 후 위험구역 200미터 이내 후보 검색</title><rect class="decision-box" x="500" y="75" width="175" height="100" rx="12" /><text class="copy" x="521" y="103">STEP 3 · METERS</text><text class="title" x="521" y="128">200m 후보 검색</text><text class="copy" x="521" y="151">ST_DWithin</text></g>
+            <g id="risk-node-covers"><title>위험구역 Polygon이 드론 Point의 XY 위치를 포함하는지 확인</title><path class="decision-diamond" d="M815 55 L895 125 L815 195 L735 125 Z" /><text class="title" x="779" y="120">내부 포함</text><text class="copy" x="781" y="140">ST_Covers?</text></g>
+            <g id="risk-output-danger"><title>수평 경계 내부이면서 고도도 일치하는 위험 상태</title><rect class="output-danger" x="970" y="30" width="110" height="70" rx="10" /><text class="title danger-text" x="991" y="60">DANGER</text><text class="copy" x="992" y="80">거리 0m</text></g>
+            <g id="risk-output-warning"><title>고도는 일치하고 경계에서 200미터 이내지만 외부인 경고 상태</title><rect class="output-warning" x="970" y="130" width="110" height="70" rx="10" /><text class="title warning-text" x="987" y="160">WARNING</text><text class="copy" x="988" y="180">1–200m</text></g>
+            <g id="risk-output-safe"><title>고도 범위 밖이거나 200미터보다 먼 안전 상태</title><rect class="output-safe" x="865" y="235" width="140" height="65" rx="10" /><text class="title safe-text" x="910" y="264">SAFE</text><text class="copy" x="891" y="284">후보 구역 없음</text></g>
+            <text class="edge-copy" x="447" y="115">YES</text><text class="edge-copy" x="367" y="220">NO</text>
+            <text class="edge-copy" x="681" y="115">FOUND</text><text class="edge-copy" x="599" y="220">NONE</text>
+            <text class="edge-copy" x="910" y="96">YES</text><text class="edge-copy" x="910" y="158">NO</text>
+          </svg>
+        </div>
+        <div class="compute-notes">
+          <div class="compute-note"><span>01 · POINTZ</span><b>입력 좌표를 하나의 3D 점으로</b><p><code>ST_MakePoint(longitude, latitude, altitude)</code>에 SRID 4326을 지정합니다. 저장 형식은 <code>geometry(PointZ, 4326)</code>입니다.</p></div>
+          <div class="compute-note"><span>02 · ALTITUDE</span><b>고도는 별도 숫자 비교</b><p><code>altitude BETWEEN min_altitude AND max_altitude</code>를 먼저 적용합니다. 지도상 내부여도 제한 고도 밖이면 SAFE입니다.</p></div>
+          <div class="compute-note"><span>03 · DISTANCE</span><b>미터 단위 후보를 먼저 축소</b><p><code>ST_DWithin(...::geography, 200.0)</code>으로 200m 이내 구역만 남기고, <code>ST_Distance</code>로 실제 거리를 계산합니다.</p></div>
+          <div class="compute-note"><span>04 · COVER</span><b>경계선까지 내부로 처리</b><p><code>ST_Covers(boundary, point)</code>가 참이면 DANGER입니다. <code>ST_Contains</code>와 달리 경계선 위의 점도 포함합니다.</p></div>
+          <div class="compute-note"><span>05 · MULTIPLE ZONES</span><b>겹치면 가장 위험한 하나를 선택</b><p>DANGER를 WARNING보다 먼저, 그다음 거리와 구역 ID 순으로 정렬해 첫 결과 하나를 선택합니다.</p></div>
+          <div class="compute-note"><span>06 · TRANSACTION</span><b>판정값과 위치를 함께 저장</b><p>telemetry에 상태를 저장하고 WARNING/DANGER만 risk_event를 만듭니다. DB 커밋 후 같은 결과를 WebSocket으로 보냅니다.</p></div>
+        </div>
+        <div class="authority-note"><i>!</i><p><b>실시간 화면의 최종 판정자는 백엔드입니다.</b> 프런트엔드의 TypeScript 공간 계산은 백엔드가 끊겼을 때 표시하는 오프라인 데모용 보조 로직입니다. 실제 <code>DRONE-LIVE-001</code> 상태는 <code>RiskRepository.java</code>의 PostGIS 결과를 그대로 사용합니다.</p></div>
+      </article>
+    </section>
+
+    <section id="proof" aria-labelledby="proof-title">
+      <header class="section-head">
+        <div><span class="section-index">05 / VERIFIED RESULT</span><h2 id="proof-title">실제로 무엇을 검증했나</h2></div>
+        <p>구현 여부만 나열하지 않고, 실제 PostGIS 통합 테스트와 10만 건 실행계획 비교 결과를 남겼습니다.</p>
+      </header>
+      <div class="proof-grid">
+        <article class="card proof-card"><span class="number">3 / 3</span><h3>PostGIS 통합 테스트</h3><p>공간 판정, 저장·시공간 검색, 잘못된 BBOX 오류 응답. 실패·건너뜀 0.</p></article>
+        <article class="card proof-card"><span class="number">100,000</span><h3>공간 위치 적재</h3><p>20대 드론 위치를 실제 PostgreSQL 16 + PostGIS 환경에 적재.</p></article>
+        <article class="card proof-card"><span class="number">7 / 7</span><h3>현재 경로·UI 단위 테스트</h3><p>순환 경로 3개 + 화면 위험판정 4개. 프런트엔드 production build 통과.</p></article>
+        <article class="card benchmark">
+          <h3>같은 검색의 인덱스 적용 전후</h3>
+          <p>서울역 BBOX + 마지막 30분 · 결과 10,645건. 막대 길이는 실제 실행시간 비율입니다.</p>
+          <div class="bar-row"><span>인덱스 전</span><div class="bar-track"><div class="bar" style="width:100%"></div></div><strong>61.245ms</strong></div>
+          <div class="bar-row"><span>인덱스 후</span><div class="bar-track"><div class="bar after" style="width:15.49%"></div></div><strong>9.485ms</strong></div>
+          <div class="callout" style="margin-top:18px"><b>84.5% 감소 · 약 6.46배</b><p><code>Parallel Seq Scan</code>에서 시간 B-tree + 위치 GiST의 <code>BitmapAnd</code>로 바뀌었습니다. 단, 동일 장비에서 각 조건을 1회 측정한 값이므로 반복 측정 중앙값은 아닙니다.</p></div>
+          <div class="plan-explainer" data-lavish-revision="r2" aria-labelledby="plan-title">
+            <header class="plan-head">
+              <div><span class="eyebrow">WHY THE INDEXED PLAN IS FASTER</span><h4 id="plan-title">Parallel Seq Scan이 BitmapAnd로 바뀌면 왜 빨라질까?</h4></div>
+              <p><b>결론:</b> 테이블 전체를 나눠 훑던 방식에서, 시간과 위치 인덱스가 찾아낸 후보의 <b>교집합만</b> 원본 테이블에서 읽는 방식으로 바뀌었기 때문입니다.</p>
+            </header>
+            <div class="plan-diagram-wrap">
+              <svg class="plan-diagram" viewBox="0 0 1120 410" role="img" aria-labelledby="plan-svg-title plan-svg-desc">
+                <title id="plan-svg-title">인덱스 적용 전후 PostgreSQL 실행계획 비교</title>
+                <desc id="plan-svg-desc">인덱스 적용 전에는 10만 행이 있는 테이블 페이지를 병렬 순차 탐색하면서 조건을 검사한다. 적용 후에는 시간 B-tree와 위치 GiST가 각각 후보 위치 비트맵을 만들고 BitmapAnd가 교집합을 구한 뒤 Bitmap Heap Scan이 필요한 테이블 페이지만 읽는다.</desc>
+                <defs>
+                  <marker id="plan-arrow-before" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--danger)" /></marker>
+                  <marker id="plan-arrow-after" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--safe)" /></marker>
+                </defs>
+
+                <rect id="plan-lane-before" class="lane-before" x="15" y="15" width="515" height="380" rx="14"><title>인덱스가 없는 실행계획</title></rect>
+                <rect id="plan-lane-after" class="lane-after" x="545" y="15" width="560" height="380" rx="14"><title>시간과 공간 인덱스를 결합한 실행계획</title></rect>
+                <text class="lane-title before-text" x="35" y="48">BEFORE · 전체를 병렬로 검사</text>
+                <text class="lane-title after-text" x="565" y="48">AFTER · 두 인덱스 후보의 교집합만 검사</text>
+
+                <path id="plan-edge-table-seq" class="plan-edge" d="M150 140 H180"><title>테이블 페이지를 순서대로 읽음</title></path>
+                <path id="plan-edge-seq-filter" class="plan-edge" d="M330 140 H360"><title>읽은 모든 행에 검색 조건 적용</title></path>
+                <path id="plan-edge-filter-gather" class="plan-edge" d="M435 185 V240 H285"><title>작업자별 결과를 정렬하고 합침</title></path>
+                <path id="plan-edge-gather-result" class="plan-edge" d="M365 285 H390"><title>정렬된 최종 결과 반환</title></path>
+                <g id="plan-node-table"><title>텔레메트리 100,000행</title><rect class="plan-node" x="35" y="95" width="115" height="90" rx="10" /><text class="copy" x="52" y="122">HEAP TABLE</text><text class="title" x="52" y="147">telemetry</text><text class="copy" x="52" y="167">100,000 rows</text></g>
+                <g id="plan-node-seq"><title>여러 작업자가 테이블 페이지 전체를 나눠 읽는 병렬 순차 탐색</title><rect class="plan-node" x="180" y="95" width="150" height="90" rx="10" /><text class="copy" x="197" y="122">SCAN ALL PAGES</text><text class="title" x="197" y="147">Parallel Seq Scan</text><text class="copy" x="197" y="167">shared hit 5,212</text></g>
+                <g id="plan-node-filter"><title>각 행마다 시간 범위와 공간 조건을 검사</title><rect class="plan-node" x="360" y="95" width="150" height="90" rx="10" /><text class="copy" x="377" y="122">ROW FILTER</text><text class="title" x="377" y="147">시간 + 공간 검사</text><text class="copy" x="377" y="167">행을 읽은 뒤 판정</text></g>
+                <g id="plan-node-gather"><title>병렬 작업자의 정렬된 결과를 하나로 병합</title><rect class="plan-node" x="205" y="240" width="160" height="90" rx="10" /><text class="copy" x="222" y="267">ORDER / MERGE</text><text class="title" x="222" y="292">Gather Merge</text><text class="copy" x="222" y="312">ORDER BY recorded_at</text></g>
+                <g id="plan-node-before-result"><title>10,645행을 61.245밀리초에 반환</title><rect class="plan-node" x="390" y="240" width="120" height="90" rx="10" /><text class="copy" x="407" y="267">RESULT</text><text class="title before-text" x="407" y="292">61.245 ms</text><text class="copy" x="407" y="312">10,645 rows</text></g>
+
+                <path id="plan-edge-btree-and" class="plan-edge after" d="M730 107 H780 V150 H805"><title>시간 조건 후보 비트맵을 BitmapAnd로 전달</title></path>
+                <path id="plan-edge-gist-and" class="plan-edge after" d="M730 242 H780 V190 H805"><title>공간 조건 후보 비트맵을 BitmapAnd로 전달</title></path>
+                <path id="plan-edge-and-heap" class="plan-edge after" d="M935 170 H965"><title>두 후보 비트맵의 교집합만 원본 테이블 읽기로 전달</title></path>
+                <path id="plan-edge-heap-exact" class="plan-edge after" d="M1030 215 V270 H870"><title>후보 행에 정확한 공간 조건과 정렬 적용</title></path>
+                <path id="plan-edge-exact-result" class="plan-edge after" d="M950 315 H970"><title>최종 결과 반환</title></path>
+                <g id="plan-node-btree"><title>recorded_at B-tree가 마지막 30분 후보 위치를 비트맵으로 생성</title><rect class="plan-node index" x="565" y="70" width="165" height="75" rx="10" /><text class="copy" x="582" y="97">BITMAP INDEX SCAN</text><text class="title" x="582" y="121">시간 B-tree</text><text class="copy" x="582" y="137">마지막 30분 후보</text></g>
+                <g id="plan-node-gist"><title>position GiST가 서울역 BBOX와 겹칠 후보 위치를 비트맵으로 생성</title><rect class="plan-node index" x="565" y="205" width="165" height="75" rx="10" /><text class="copy" x="582" y="232">BITMAP INDEX SCAN</text><text class="title" x="582" y="256">위치 GiST</text><text class="copy" x="582" y="272">BBOX 겹침 후보</text></g>
+                <g id="plan-node-bitmap-and"><title>시간 후보와 위치 후보의 비트맵 교집합 계산</title><rect class="plan-node merge" x="805" y="125" width="130" height="90" rx="10" /><text class="copy" x="823" y="152">INTERSECTION</text><text class="title after-text" x="823" y="177">BitmapAnd</text><text class="copy" x="823" y="197">시간 ∩ 위치</text></g>
+                <g id="plan-node-bitmap-heap"><title>교집합에 표시된 테이블 페이지만 모아 원본 행을 읽음</title><rect class="plan-node" x="965" y="125" width="120" height="90" rx="10" /><text class="copy" x="982" y="152">FETCH HEAP</text><text class="title" x="982" y="177">Bitmap</text><text class="title" x="982" y="194">Heap Scan</text></g>
+                <g id="plan-node-exact"><title>후보 행에 ST_Intersects 정확 판정과 시간순 정렬을 적용</title><rect class="plan-node" x="790" y="270" width="160" height="90" rx="10" /><text class="copy" x="807" y="297">RECHECK / SORT</text><text class="title" x="807" y="322">정확 판정 + 정렬</text><text class="copy" x="807" y="342">ST_Intersects</text></g>
+                <g id="plan-node-after-result"><title>10,645행을 9.485밀리초에 반환</title><rect class="plan-node merge" x="970" y="270" width="115" height="90" rx="10" /><text class="copy" x="987" y="297">RESULT</text><text class="title after-text" x="987" y="322">9.485 ms</text><text class="copy" x="987" y="342">10,645 rows</text></g>
+              </svg>
+            </div>
+            <div class="plan-compare-wrap">
+              <table class="plan-compare">
+                <thead><tr><th>비교 항목</th><th>Parallel Seq Scan</th><th>BitmapAnd + Bitmap Heap Scan</th></tr></thead>
+                <tbody>
+                  <tr><td>무엇을 읽나</td><td>작업자들이 테이블 페이지 전체를 나눠 읽습니다.</td><td>두 인덱스에 모두 잡힌 후보가 있는 테이블 페이지만 읽습니다.</td></tr>
+                  <tr><td>조건 결합</td><td>원본 행을 읽은 뒤 시간·BBOX·<code>ST_Intersects</code>를 행마다 검사합니다.</td><td>B-tree 시간 비트맵과 GiST 공간 비트맵을 먼저 AND하고, 정확한 공간 판정은 후보 행에만 적용합니다.</td></tr>
+                  <tr><td>병렬성과 정렬</td><td>병렬 작업자가 탐색·정렬하고 <code>Gather Merge</code>가 결과를 합칩니다.</td><td>비트맵은 인덱스 정렬 순서를 보존하지 않아 <code>ORDER BY recorded_at</code> 정렬은 남을 수 있습니다.</td></tr>
+                  <tr><td>유리한 상황</td><td>테이블이 작거나 결과가 대부분의 행일 때 순차 읽기의 단순함이 유리할 수 있습니다.</td><td>시간과 공간 조건이 충분히 선택적이고 여러 인덱스의 교집합이 작을 때 유리합니다.</td></tr>
+                  <tr><td>이번 측정</td><td>61.245ms · shared hit 5,212</td><td>9.485ms · shared hit 606 + read 258</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="plan-reasons" aria-label="성능 개선 이유">
+              <article class="plan-reason"><span>01 · SELECTIVITY</span><b>최종 결과는 전체의 약 10.6%</b><p>100,000행 중 10,645행만 반환되어, 전체 탐색보다 후보 축소의 이득이 컸습니다.</p></article>
+              <article class="plan-reason"><span>02 · FEWER BUFFERS</span><b>보고된 버퍼 작업 약 83.4% 감소</b><p>5,212 hit에서 606 hit + 258 read, 합계 864로 줄어 원본 페이지 접근량이 크게 감소했습니다.</p></article>
+              <article class="plan-reason"><span>03 · SPECIALIZED INDEXES</span><b>각 조건에 맞는 인덱스</b><p>B-tree는 시간 범위를, GiST는 공간 BBOX 후보를 빠르게 찾고 BitmapAnd가 둘을 결합합니다.</p></article>
+              <article class="plan-reason"><span>04 · LATE EXACT CHECK</span><b>비싼 정확 판정은 후보에만</b><p><code>ST_Intersects</code> 같은 정확 공간 연산을 모든 행이 아니라 축소된 후보에 적용합니다.</p></article>
+            </div>
+            <aside class="plan-note"><p><b>정확히 말하면:</b> <code>BitmapAnd</code>는 인덱스가 아니라 두 <code>Bitmap Index Scan</code> 결과를 합치는 실행 노드입니다. 이 계획은 <code>idx_telemetry_recorded_at</code> B-tree와 <code>idx_telemetry_position_gist</code> GiST를 만든 뒤 <code>ANALYZE telemetry</code>로 통계를 갱신했기 때문에 선택됐습니다. <code>(drone_id, recorded_at)</code> 복합 인덱스는 이 쿼리에 <code>drone_id</code> 조건이 없어 핵심 경로가 아닙니다.</p></aside>
+          </div>
+          <div class="distribution" aria-label="10만 건 상태 분포"><span title="SAFE 70,906"></span><span title="WARNING 20,416"></span><span title="DANGER 8,678"></span></div>
+          <div class="dist-labels"><span style="color:var(--safe)">SAFE 70,906</span><span style="color:var(--warning)">WARNING 20,416</span><span style="color:var(--danger)">DANGER 8,678</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="guide" aria-labelledby="guide-title">
+      <header class="section-head">
+        <div><span class="section-index">06 / GUIDE & BOUNDARY</span><h2 id="guide-title">용어와 현재 범위</h2></div>
+        <p>낯선 GIS 용어는 펼쳐서 확인할 수 있습니다. 오른쪽에는 포트폴리오를 과장하지 않기 위한 현재 한계를 명시했습니다.</p>
+      </header>
+      <div class="two-col">
+        <div class="glossary">
+          <details open><summary>PostGIS</summary><p>PostgreSQL에 공간 자료형과 공간 함수, 공간 인덱스를 추가하는 확장입니다. 이 프로젝트에서는 Polygon과 PointZ 저장, 포함·거리·BBOX 검색에 사용합니다.</p></details>
+          <details><summary>PointZ · Polygon</summary><p>PointZ는 경도(X), 위도(Y), 고도(Z)를 가진 3차원 점입니다. Polygon은 여러 좌표로 둘러싼 위험구역의 수평 경계입니다.</p></details>
+          <details><summary>EPSG:4326</summary><p>GPS에서 흔히 쓰는 WGS84 경도·위도 좌표계 식별자입니다. 시뮬레이터, API, DB, Cesium 간 좌표 기준을 맞춥니다.</p></details>
+          <details><summary>BBOX</summary><p>서·남·동·북 네 값으로 만든 사각 검색 영역입니다. 현재 지도에 보이는 범위 안의 위치만 조회할 때 사용합니다.</p></details>
+          <details><summary>GiST</summary><p>PostgreSQL의 범용 트리 인덱스 구조입니다. PostGIS 공간 객체의 겹침 후보를 빠르게 줄여 전체 행을 훑는 일을 피합니다.</p></details>
+          <details><summary>GeoJSON · GLB · WebSocket</summary><p>GeoJSON은 위험구역 같은 공간 데이터를 JSON으로 표현합니다. GLB는 glTF 기반 3D 모델 단일 파일입니다. WebSocket은 연결을 유지해 서버가 새 위치를 즉시 밀어주는 통신 방식입니다.</p></details>
+        </div>
+        <article class="card limits">
+          <span class="eyebrow">HONEST BOUNDARY</span>
+          <h3>현재 구현의 한계</h3>
+          <ul>
+            <li>위험구역과 비행 위치는 실제 항공 데이터가 아닌 <b>합성 데이터</b>입니다.</li>
+            <li>실시간 WebSocket은 단일 백엔드 프로세스 메모리 세션 기준이며 메시지 브로커는 없습니다.</li>
+            <li>인증·권한, 드론 장비 프로토콜, 장애 재처리 큐는 하루 프로젝트 범위에서 제외했습니다.</li>
+            <li>동적 순환 경로의 내부 4점 방식은 현재 직사각형/볼록 다각형 데모 구역에 맞춘 구현입니다.</li>
+            <li>10만 건 성능 수치는 한 장비·각 1회 측정이라 운영 용량 보장을 뜻하지 않습니다.</li>
+          </ul>
+          <h3 style="margin-top:22px">코드를 찾는 가장 짧은 지도</h3>
+          <div class="file-map">
+            <code>frontend/ → Cesium 화면·REST/WS 클라이언트</code>
+            <code>backend/ → API·서비스·공간 SQL</code>
+            <code>infra/db/ → 스키마·시드·10만 건·벤치마크</code>
+            <code>scripts/ → 실시간/과거 데이터 생성기</code>
+            <code>assets/ → OBJ 원본·GLB 변환 파이프라인</code>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <button class="icon-button to-top" id="to-top" type="button" aria-label="문서 처음으로 이동">↑</button>
+  <footer>GeoGuard 3D · 구현 코드와 2026-10-02 검증 결과를 기준으로 작성한 개발 결과 문서</footer>
+
+  <script>
+    const architectureDetails = {
+      simulator: {
+        name: 'Node Simulator',
+        copy: '백엔드의 위험구역 GeoJSON을 읽고 구역당 4개 경유점을 만든 뒤, 구간별 위도·경도·고도·방향·속도를 보간해 1초마다 전송합니다.',
+        files: ['scripts/simulate-drone.mjs', 'scripts/lib/patrol-route.mjs', 'compose.yaml → simulator'],
+      },
+      backend: {
+        name: 'Spring Boot Backend',
+        copy: '최대 1,000개 위치를 입력 검증하고 각 점의 위험도를 PostGIS로 판정합니다. 위치·위험 이벤트를 한 트랜잭션으로 저장하며, 커밋이 끝난 뒤에만 실시간 이벤트를 발행합니다.',
+        files: ['TelemetryController.java', 'TelemetryService.java', 'RiskRepository.java'],
+      },
+      database: {
+        name: 'PostgreSQL + PostGIS',
+        copy: '위험구역은 Polygon, 드론은 PointZ로 저장합니다. ST_Covers로 내부 여부를, ST_DWithin으로 200m 접근 여부를 판단하며 GiST와 B-tree로 공간·시간 검색을 가속합니다.',
+        files: ['infra/db/init/002_schema.sql', 'V1__postgis_schema.sql', 'TelemetryRepository.java'],
+      },
+      frontend: {
+        name: 'CesiumJS Frontend',
+        copy: 'GeoJSON 위험구역을 고도만큼 돌출하고 GLB 드론을 지구 좌표에 배치합니다. WebSocket 위치로 엔티티와 궤적을 갱신하고, 저장된 경로는 REST로 검색해 별도 색상으로 표시합니다.',
+        files: ['frontend/src/main.ts', 'frontend/src/api.ts', 'frontend/src/zoneRisk.ts'],
+      },
+    };
+
+    const archNodes = [...document.querySelectorAll('.arch-node')];
+    function selectArchitecture(module) {
+      const detail = architectureDetails[module];
+      archNodes.forEach((node) => node.classList.toggle('active', node.dataset.module === module));
+      document.querySelector('#arch-name').textContent = detail.name;
+      document.querySelector('#arch-copy').textContent = detail.copy;
+      const files = document.querySelector('#arch-files');
+      files.replaceChildren(...detail.files.map((file) => {
+        const item = document.createElement('li'); item.textContent = file; return item;
+      }));
+    }
+    archNodes.forEach((node) => {
+      node.addEventListener('click', () => selectArchitecture(node.dataset.module));
+      node.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectArchitecture(node.dataset.module); }
+      });
+    });
+
+    document.querySelectorAll('.filter').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.filter').forEach((item) => item.classList.toggle('active', item === button));
+        const filter = button.dataset.filter;
+        document.querySelectorAll('tbody tr').forEach((row) => {
+          row.hidden = filter !== 'all' && !row.dataset.layer.split(' ').includes(filter);
+        });
+      });
+    });
+
+    document.querySelectorAll('.tab').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((item) => {
+          const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-selected', String(active));
+        });
+        document.querySelectorAll('.flow-panel').forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab));
+      });
+    });
+
+    const distanceInput = document.querySelector('#distance');
+    const altitudeInput = document.querySelector('#altitude-match');
+    function updateRiskLab() {
+      const distance = Number(distanceInput.value);
+      const altitudeMatches = altitudeInput.checked;
+      let status = 'SAFE'; let reason = altitudeMatches ? '경계에서 200m보다 멂' : '제한 고도 범위 밖'; let color = 'var(--safe)';
+      if (altitudeMatches && distance === 0) { status = 'DANGER'; reason = '구역 내부 + 고도 범위 일치'; color = 'var(--danger)'; }
+      else if (altitudeMatches && distance <= 200) { status = 'WARNING'; reason = `경계까지 ${distance}m · 200m 이내`; color = 'var(--warning)'; }
+      document.querySelector('#distance-value').textContent = distance;
+      document.querySelector('#risk-status').textContent = status;
+      document.querySelector('#risk-reason').textContent = reason;
+      document.querySelector('#risk-output').style.setProperty('--status-color', color);
+    }
+    distanceInput.addEventListener('input', updateRiskLab);
+    altitudeInput.addEventListener('change', updateRiskLab);
+
+    const themeButton = document.querySelector('#theme-toggle');
+    themeButton.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      themeButton.textContent = next === 'dark' ? '☼' : '☾';
+      themeButton.setAttribute('aria-label', next === 'dark' ? '밝은 테마로 전환' : '어두운 테마로 전환');
+    });
+
+    const navigationLinks = [...document.querySelectorAll('.quick-nav a')];
+    const sections = navigationLinks.map((link) => document.querySelector(link.getAttribute('href')));
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        navigationLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`));
+      });
+    }, { rootMargin: '-35% 0px -55%' });
+    sections.forEach((section) => sectionObserver.observe(section));
+
+    const toTop = document.querySelector('#to-top');
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    function updateScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = max > 0 ? window.scrollY / max * 100 : 0;
+      document.querySelector('#scroll-progress').style.width = `${progress}%`;
+      toTop.classList.toggle('visible', window.scrollY > 600);
+    }
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    updateScroll();
+  </script>
+</body>
+</html>

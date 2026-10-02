@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09111c" />
+    <meta name="description" content="실시간 3D 드론 위험구역 관제 시스템" />
+    <title>GeoGuard 3D</title>
+  </head>
+  <body>
+    <div id="app">
+      <main class="shell">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <div>
+              <p>REAL-TIME GEO INTELLIGENCE</p>
+              <h1>GeoGuard <strong>3D</strong></h1>
+            </div>
+          </div>
+          <div class="topbar-meta">
+            <span id="clock">--:--:-- KST</span>
+            <span class="connection" id="connection"><i></i>연결 중</span>
+          </div>
+        </header>
+
+        <section class="workspace">
+          <div class="map-wrap">
+            <div id="cesiumContainer" aria-label="3D 드론 관제 지도"></div>
+            <div class="map-title">
+              <span>LIVE OPERATIONS</span>
+              <b>SEOUL · 3D AIRSPACE</b>
+            </div>
+            <div class="map-tools" aria-label="지도 도구">
+              <button id="home-camera" type="button" title="기본 시점">⌂</button>
+              <button id="follow-drone" type="button" title="드론 추적">⌖</button>
+            </div>
+            <div class="map-legend">
+              <span><i class="zone-fill"></i>비행 제한 구역</span>
+              <span><i class="trail-line"></i>실시간 이동 경로</span>
+              <span><i class="history-line"></i>과거 검색 경로</span>
+            </div>
+            <div class="telemetry-card glass">
+              <span class="eyebrow">ACTIVE AIRCRAFT</span>
+              <div class="telemetry-id"><b id="drone-id">수신 대기</b><span id="status-mini">WAIT</span></div>
+              <dl>
+                <div><dt>위도</dt><dd id="latitude">--</dd></div>
+                <div><dt>경도</dt><dd id="longitude">--</dd></div>
+                <div><dt>고도</dt><dd id="altitude">-- m</dd></div>
+                <div><dt>방향</dt><dd id="heading">--°</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <aside class="sidebar">
+            <section class="status-panel panel">
+              <div class="section-heading">
+                <div><span class="eyebrow">THREAT ASSESSMENT</span><h2>비행 안전 상태</h2></div>
+                <span class="live-pulse">LIVE</span>
+              </div>
+              <div class="status-orb safe" id="status-orb">
+                <span class="orb-ring"></span>
+                <div><small>현재 상태</small><strong id="status-label">SAFE</strong><em id="status-korean">안전 비행 중</em></div>
+              </div>
+              <div class="distance-row">
+                <div><span>가장 가까운 위험구역</span><b id="nearest-zone">조회 중</b></div>
+                <strong id="zone-distance">-- m</strong>
+              </div>
+              <div class="status-scale" aria-label="위험 단계 범례">
+                <span class="safe">SAFE</span><span class="warning">WARNING</span><span class="danger">DANGER</span>
+              </div>
+            </section>
+
+            <section class="search-panel panel">
+              <div class="section-heading">
+                <div><span class="eyebrow">HISTORICAL ANALYSIS</span><h2>과거 비행 경로</h2></div>
+              </div>
+              <form id="track-form">
+                <div class="form-grid">
+                  <label>드론 ID<input id="search-drone-id" name="droneId" value="DEMO-HISTORY-01" required /></label>
+                  <label>비행 상태
+                    <select id="search-status" name="status">
+                      <option value="">전체 상태</option>
+                      <option value="SAFE">SAFE</option>
+                      <option value="WARNING">WARNING</option>
+                      <option value="DANGER">DANGER</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="form-grid">
+                  <label>시작 시각<input id="search-from" name="from" type="datetime-local" required /></label>
+                  <label>종료 시각<input id="search-to" name="to" type="datetime-local" required /></label>
+                </div>
+                <label class="checkbox-row"><input id="use-viewport" type="checkbox" checked /><span>현재 지도 범위 · GiST 공간검색</span></label>
+                <button class="primary-button" type="submit"><span>경로 검색</span><b>→</b></button>
+              </form>
+              <div class="search-result" id="search-result" aria-live="polite">
+                <span>시간 B-tree와 위치 GiST를 사용할 수 있는 조건으로 저장 경로를 검색합니다.</span>
+              </div>
+              <div class="search-pagination" id="search-pagination" hidden>
+                <button id="search-prev" type="button" disabled>← 이전</button>
+                <span id="search-page">1 / 1</span>
+                <button id="search-next" type="button" disabled>다음 →</button>
+              </div>
+              <details class="search-debug" id="search-debug">
+                <summary><span>검색 실행 정보</span><b id="search-index-badge">INDEX READY</b></summary>
+                <dl>
+                  <div><dt>서버 검색 시간</dt><dd id="search-query-time">검색 전</dd></div>
+                  <div><dt>적용 조건</dt><dd id="search-filters">-</dd></div>
+                  <div><dt>후보 인덱스</dt><dd id="search-indexes">-</dd></div>
+                  <div><dt>조회 범위</dt><dd id="search-window">-</dd></div>
+                </dl>
+                <p>표시된 인덱스는 조건상 사용 가능한 후보입니다. 실제 실행계획은 PostgreSQL 플래너가 통계와 선택도를 보고 결정합니다.</p>
+              </details>
+            </section>
+
+            <section class="event-panel panel">
+              <div class="section-heading compact">
+                <div><span class="eyebrow">EVENT STREAM</span><h2>최근 이벤트</h2></div>
+                <span id="event-count">0</span>
+              </div>
+              <ol id="event-list" class="event-list">
+                <li class="empty">수신 대기 중...</li>
+              </ol>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

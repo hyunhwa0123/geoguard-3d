@@ -1,0 +1,76 @@
+name: geoguard-3d
+
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    container_name: geoguard-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-geoguard}
+      POSTGRES_USER: ${POSTGRES_USER:-geoguard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-geoguard_local_only}
+      TZ: ${TZ:-Asia/Seoul}
+      PGTZ: ${TZ:-Asia/Seoul}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - geoguard-postgres-data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+      - ./infra/db/scripts:/opt/geoguard/sql:ro
+      - ./infra/db/benchmark:/opt/geoguard/benchmark:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    shm_size: 256mb
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: geoguard-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-geoguard}
+      DB_USERNAME: ${POSTGRES_USER:-geoguard}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-geoguard_local_only}
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:${APP_PORT:-5173}
+      TZ: ${TZ:-Asia/Seoul}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: geoguard-frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-5173}:80"
+    depends_on:
+      - backend
+
+  simulator:
+    image: node:22-alpine
+    container_name: geoguard-simulator
+    restart: unless-stopped
+    working_dir: /workspace
+    command: ["node", "scripts/simulate-drone.mjs"]
+    environment:
+      GEOGUARD_API_URL: http://backend:8080
+      GEOGUARD_DRONE_ID: DRONE-LIVE-001
+      GEOGUARD_INTERVAL_MS: 1000
+      GEOGUARD_CRUISE_SPEED_MPS: 45
+    volumes:
+      - ./scripts:/workspace/scripts:ro
+    depends_on:
+      - backend
+
+volumes:
+  geoguard-postgres-data:
+
