@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!frontend/.env.demo
 
 # Java / Gradle
 .tools/
@@ -29,6 +30,7 @@ Thumbs.db
 *.tmp
 *.swp
 .lavish/
+.vercel/
 
 # Local benchmark scratch files (curated results may be committed as Markdown)
 infra/db/benchmark/results/*.txt

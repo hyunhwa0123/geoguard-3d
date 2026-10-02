@@ -74,6 +74,31 @@ npm run dev
 
 백엔드가 연결되지 않아도 프런트엔드는 내장된 데모 궤적으로 작동합니다.
 
+## 공개 데모와 Vercel 배포
+
+루트의 `vercel.json`은 Vercel에서 `frontend`를 정적 빌드하며, `build:demo`가 공개 데모 모드를 활성화합니다. 이 모드에는 비밀키나 외부 데이터베이스 연결이 없으며 다음 기능을 브라우저의 합성 데이터로 체험할 수 있습니다.
+
+- 두 위험구역을 순회하는 드론과 `SAFE` / `WARNING` / `DANGER` 전환
+- `DEMO-HISTORY-01`의 최근 1시간 과거 경로 검색, 상태 필터, BBOX, 페이지 이동
+- 실제 백엔드에서 사용할 시간 B-tree·위치 GiST 후보 인덱스 표시
+
+화면의 `공개 데모`, `합성 데모`, `브라우저 데모` 표시는 실제 PostGIS 질의 결과와 혼동되지 않도록 합니다. 저장소를 Vercel에 가져오면 별도 환경변수 없이 배포할 수 있습니다.
+
+```powershell
+cd frontend
+npm run build:demo
+npm run preview
+```
+
+실제 Spring Boot/PostGIS 환경은 Vercel 정적 호스팅에 포함되지 않습니다. 실제 API를 공개 운영할 때는 백엔드와 PostgreSQL/PostGIS를 별도 서비스에 배포하고 `VITE_API_BASE_URL`, `VITE_WS_URL`, `VITE_DEMO_MODE=false`로 다시 빌드합니다.
+
+### 공개 저장소 보안 범위
+
+- 실제 `.env`와 `.env.local`, `.vercel`, 빌드 결과, 로컬 도구는 Git에서 제외합니다.
+- 예제 비밀번호 `geoguard_local_only`는 로컬 개발 전용이며 운영 비밀번호로 사용하지 않습니다.
+- Cesium Ion 토큰은 사용하지 않고 OpenStreetMap 공개 타일을 사용합니다.
+- 포함된 위치·비행 이력·벤치마크 데이터는 모두 합성 데이터입니다.
+
 ### 4. 실시간 텔레메트리
 
 별도 터미널에서:

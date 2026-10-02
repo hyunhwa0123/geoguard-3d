@@ -23,7 +23,8 @@ import {
   Viewer,
 } from 'cesium';
 import './style.css';
-import { getTelemetry, getZones, openTelemetrySocket } from './api';
+import { getTelemetry, getZones, IS_DEMO_MODE, openTelemetrySocket } from './api';
+import { DEMO_ZONES, sampleDemoRoute } from './demoData';
 import type { FlightStatus, PagedResponse, Telemetry, TelemetryQuery } from './types';
 import { assessPointAgainstZones, type ZoneCollection } from './zoneRisk';
 
@@ -65,30 +66,6 @@ viewer.scene.backgroundColor = Color.fromCssColorString('#050d14');
 viewer.scene.fog.enabled = true;
 viewer.clock.shouldAnimate = true;
 
-const fallbackZones: ZoneCollection = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      id: 'ZONE-SEOUL-01',
-      properties: { id: 'ZONE-SEOUL-01', name: '도심 비행 제한구역', minAltitude: 0, maxAltitude: 450 },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[126.977, 37.562], [126.987, 37.562], [126.988, 37.570], [126.976, 37.571], [126.977, 37.562]]],
-      },
-    },
-    {
-      type: 'Feature',
-      id: 'ZONE-SEOUL-02',
-      properties: { id: 'ZONE-SEOUL-02', name: '고도 제한구역', minAltitude: 100, maxAltitude: 320 },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[126.991, 37.568], [126.997, 37.568], [126.997, 37.574], [126.991, 37.574], [126.991, 37.568]]],
-      },
-    },
-  ],
-};
-
 const droneEntities = new Map<string, Entity>();
 const livePositions = new Map<string, Cartesian3[]>();
 let activeDroneId = 'DRONE-01';
@@ -98,7 +75,7 @@ let demoTimer: number | undefined;
 let receivedRealTelemetry = false;
 let backendConnected = false;
 let followDrone = false;
-let displayedZones = fallbackZones;
+let displayedZones = DEMO_ZONES;
 let restrictedZoneSource: GeoJsonDataSource | undefined;
 let activeSearch: Omit<TelemetryQuery, 'page' | 'size'> | undefined;
 let currentSearchPage = 0;
@@ -158,7 +135,7 @@ async function loadRestrictedZones() {
     displayedZones = await getZones() as ZoneCollection;
   } catch (error) {
     console.info('API 위험구역을 불러오지 못해 데모 구역을 표시합니다.', error);
-    displayedZones = fallbackZones;
+    displayedZones = DEMO_ZONES;
   }
   const source = await GeoJsonDataSource.load(
     displayedZones as Parameters<typeof GeoJsonDataSource.load>[0],
@@ -388,13 +365,17 @@ function updateSearchDiagnostics(response: PagedResponse<Telemetry>, query: Omit
   const indexes = metadata?.candidateIndexes ?? [];
   const hasSpatial = indexes.includes('idx_telemetry_position_gist');
   const hasTemporal = indexes.some((index) => index.includes('recorded_at'));
-  $('#search-query-time').textContent = metadata ? `${metadata.queryTimeMs.toFixed(3)} ms` : '측정 정보 없음';
+  $('#search-query-time').textContent = metadata
+    ? `${metadata.queryTimeMs.toFixed(3)} ms${IS_DEMO_MODE ? ' · 브라우저 데모' : ''}`
+    : '측정 정보 없음';
   $('#search-filters').textContent = metadata?.appliedFilters.length
     ? metadata.appliedFilters.map((filter) => filterLabels[filter] ?? filter).join(' + ')
     : '조건 없음';
   $('#search-indexes').textContent = indexes.length ? indexes.join(' + ') : '순차 탐색 가능';
   $('#search-window').textContent = query.bbox ? query.bbox : '지도 범위 제한 없음';
-  $('#search-index-badge').textContent = hasSpatial && hasTemporal ? 'BITMAPAND 가능' : indexes.length ? 'INDEX 후보' : 'SEQ 가능';
+  $('#search-index-badge').textContent = IS_DEMO_MODE
+    ? 'DEMO DATA'
+    : hasSpatial && hasTemporal ? 'BITMAPAND 가능' : indexes.length ? 'INDEX 후보' : 'SEQ 가능';
 }
 
 function updateSearchPagination(response: PagedResponse<Telemetry>, itemCount: number) {
@@ -447,7 +428,7 @@ async function runSearch(page: number) {
     const first = pagination.page * pagination.size + 1;
     const last = first + items.length - 1;
     result.className = 'search-result success';
-    result.textContent = `${first.toLocaleString()}–${last.toLocaleString()} / 전체 ${pagination.total.toLocaleString()}개 · 현재 페이지 SAFE ${safeCount.toLocaleString()} · WARNING ${warningCount.toLocaleString()} · DANGER ${dangerCount.toLocaleString()}${activeSearch.bbox ? ' · GiST BBOX' : ''}`;
+    result.textContent = `${first.toLocaleString()}–${last.toLocaleString()} / 전체 ${pagination.total.toLocaleString()}개 · 현재 페이지 SAFE ${safeCount.toLocaleString()} · WARNING ${warningCount.toLocaleString()} · DANGER ${dangerCount.toLocaleString()}${activeSearch.bbox ? ' · GiST BBOX' : ''}${IS_DEMO_MODE ? ' · 합성 데모' : ''}`;
   } catch (error) {
     result.className = 'search-result error';
     result.textContent = error instanceof Error ? error.message : '경로 검색에 실패했습니다.';
@@ -475,7 +456,8 @@ function setConnectionState(connected: boolean) {
   connection.className = connected ? 'connection connected' : 'connection demo';
   connection.innerHTML = connected
     ? '<i></i>실시간 연결'
-    : receivedRealTelemetry ? '<i></i>연결 재시도' : '<i></i>오프라인 데모';
+    : IS_DEMO_MODE ? '<i></i>공개 데모'
+      : receivedRealTelemetry ? '<i></i>연결 재시도' : '<i></i>오프라인 데모';
   if (connected) {
     stopDemo();
     removeOfflineDemo();
@@ -487,10 +469,7 @@ function startDemo() {
   if (demoTimer || backendConnected || receivedRealTelemetry) return;
   let step = 0;
   const tick = () => {
-    const angle = step * 0.055;
-    const longitude = 126.9724 + Math.sin(angle) * 0.0100;
-    const latitude = 37.5545 + Math.cos(angle) * 0.0012;
-    const altitude = 100 + Math.sin(angle * 2) * 30;
+    const { longitude, latitude, altitude } = sampleDemoRoute(step / 180);
     const assessment = assessPointAgainstZones(longitude, latitude, altitude, displayedZones);
     updateDrone({
       droneId: OFFLINE_DEMO_DRONE_ID,

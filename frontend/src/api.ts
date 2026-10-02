@@ -1,7 +1,12 @@
 import type { PagedResponse, Telemetry, TelemetryEnvelope, TelemetryQuery } from './types';
+import { DEMO_ZONES, searchDemoTelemetry } from './demoData';
 
 const configuredApiUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 export const API_BASE_URL = (configuredApiUrl || window.location.origin).replace(/\/$/, '');
+
+const configuredDemoMode = import.meta.env.VITE_DEMO_MODE?.trim().toLowerCase();
+export const IS_DEMO_MODE = configuredDemoMode === 'true'
+  || (configuredDemoMode !== 'false' && !['localhost', '127.0.0.1'].includes(window.location.hostname));
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const defaultWsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
@@ -20,10 +25,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function getZones(): Promise<GeoJSON.FeatureCollection<GeoJSON.Polygon>> {
+  if (IS_DEMO_MODE) return Promise.resolve(DEMO_ZONES);
   return request('/api/zones');
 }
 
 export async function getTelemetry(query: TelemetryQuery): Promise<PagedResponse<Telemetry>> {
+  if (IS_DEMO_MODE) return searchDemoTelemetry(query);
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== '') params.set(key, String(value));
@@ -33,6 +40,7 @@ export async function getTelemetry(query: TelemetryQuery): Promise<PagedResponse
 }
 
 export async function getTrack(droneId: string, from: string, to: string): Promise<PagedResponse<Telemetry>> {
+  if (IS_DEMO_MODE) return searchDemoTelemetry({ droneId, from, to });
   const params = new URLSearchParams({ from, to });
   const payload = await request<PagedResponse<Telemetry> | Telemetry[]>(
     `/api/drones/${encodeURIComponent(droneId)}/track?${params}`,
@@ -44,6 +52,10 @@ export function openTelemetrySocket(
   onTelemetry: (telemetry: Telemetry) => void,
   onStateChange: (connected: boolean) => void,
 ): () => void {
+  if (IS_DEMO_MODE) {
+    queueMicrotask(() => onStateChange(false));
+    return () => undefined;
+  }
   let socket: WebSocket | undefined;
   let retryTimer: number | undefined;
   let closedByClient = false;
