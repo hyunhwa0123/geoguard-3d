@@ -1,12 +1,12 @@
 # GeoGuard 3D
 
-헬리오센 GIS Application 개발자 공고를 목표로 만든 **실시간 3D 드론 위험구역 관제 Web GIS** 포트폴리오입니다.
+CesiumJS, Spring Boot, PostGIS를 활용해 만든 **실시간 3D 드론 위험구역 관제 Web GIS** 개인 포트폴리오 프로젝트입니다.
 
 드론 텔레메트리를 수집하여 PostGIS에 `PointZ`로 저장하고, 고도와 공간 연산으로 위험도를 판정합니다. 판정 결과는 WebSocket으로 CesiumJS 화면에 전송되며, 저장된 경로는 지도 영역(BBOX)과 시간 범위로 다시 검색할 수 있습니다.
 
-## 보여주는 역량
+## 핵심 구현 역량
 
-| 지원 자격 | 구현 내용 |
+| 역량 영역 | 구현 내용 |
 |---|---|
 | GIS 개발 | EPSG:4326, GeoJSON, BBOX, `ST_Covers`, `ST_DWithin` |
 | 3D 모델 데이터 처리 | 자체 OBJ를 GLB로 변환하고 좌표·고도·방향에 맞춰 CesiumJS에 배치 |
